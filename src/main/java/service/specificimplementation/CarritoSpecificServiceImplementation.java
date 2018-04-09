@@ -164,7 +164,6 @@ public class CarritoSpecificServiceImplementation extends TableGenericServiceImp
             ReplyBeanHelper oReplyBean = null;
             Connection oConnection = null;
             ConnectionInterface oPooledConnection = null;
-            RandomHelper ubicacion = new RandomHelper();
             
 
             try {

@@ -51,6 +51,7 @@ import helper.constant.ConfigurationConstants;
 import helper.constant.ConnectionConstants;
 import helper.GsonHelper;
 import helper.Log4jHelper;
+import helper.RandomHelper;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -156,7 +157,6 @@ public class CarritoSpecificServiceImplementation extends TableGenericServiceImp
         }
     }
 
-    // falta implementar id_tienda
     public ReplyBeanHelper buy() throws Exception {
         if (this.checkPermission("buy")) {
             ArrayList<CarritoSpecificBeanImplementation> alCarrito = (ArrayList) oRequest.getSession().getAttribute("carrito");
@@ -164,6 +164,9 @@ public class CarritoSpecificServiceImplementation extends TableGenericServiceImp
             ReplyBeanHelper oReplyBean = null;
             Connection oConnection = null;
             ConnectionInterface oPooledConnection = null;
+            RandomHelper ubicacion = new RandomHelper();
+            
+
             try {
                 oPooledConnection = ConnectionFactory.getSourceConnection(ConnectionConstants.connectionName);
                 oConnection = oPooledConnection.newConnection();
@@ -173,7 +176,9 @@ public class CarritoSpecificServiceImplementation extends TableGenericServiceImp
                     oPedidoBean.setId_usuario(((UsuarioSpecificBeanImplementation) oUsuarioBeanConMetaDatos.getBean()).getId());
                     oPedidoBean.setFecha_pedido(Calendar.getInstance().getTime());
                     PedidoSpecificDaoImplementation oPedidoDao = new PedidoSpecificDaoImplementation(oConnection, (MetaBeanHelper) oRequest.getSession().getAttribute("user"), null);
+                    oPedidoBean.setId_tienda(((UsuarioSpecificBeanImplementation) oUsuarioBeanConMetaDatos.getBean()).getId_tienda());
                     oPedidoBean.setId(oPedidoDao.set(oPedidoBean));
+
                     Iterator<CarritoSpecificBeanImplementation> iterator = alCarrito.iterator();
                     while (iterator.hasNext()) {
                         CarritoSpecificBeanImplementation oCarritoBean = iterator.next();
@@ -182,24 +187,35 @@ public class CarritoSpecificServiceImplementation extends TableGenericServiceImp
                         PlatoSpecificDaoImplementation oPlatoDao = new PlatoSpecificDaoImplementation(oConnection, (MetaBeanHelper) oRequest.getSession().getAttribute("user"), null);
                         MetaBeanHelper oMetaBeanHelper = (MetaBeanHelper) oPlatoDao.get(oPlatoBeanDeCarrito.getId(), ConfigurationConstants.jsonMsgDepth);
                         PlatoSpecificBeanImplementation oPlatoBeanDeDB = (PlatoSpecificBeanImplementation) oMetaBeanHelper.getBean();
+                        
+                        double importeTotal = 0.0;
+                        double importeElemento = 0.0;
+                        
                         if (oPlatoBeanDeDB.getExistencias() > oCarritoBean.getCantidad()) {
                             LineapedidoSpecificBeanImplementation oLineadepedidoBean = new LineapedidoSpecificBeanImplementation();
                             TicketSpecificBeanImplementation oTicketdepedidoBean = new TicketSpecificBeanImplementation();
 
+                            importeElemento = oCarritoBean.getCantidad() * oPlatoBeanDeCarrito.getPrecio();
+                            importeTotal += importeElemento;
+                            
                             oLineadepedidoBean.setCantidad(oCarritoBean.getCantidad());
                             oLineadepedidoBean.setId_pedido(oPedidoBean.getId());
                             oLineadepedidoBean.setId_plato(oPlatoBeanDeCarrito.getId());
+                            oLineadepedidoBean.setImporte(importeElemento);
 
                             oTicketdepedidoBean.setFecha_ticket(oPedidoBean.getFecha_pedido());
                             oTicketdepedidoBean.setId_pedido(oPedidoBean.getId());
-
+                            oTicketdepedidoBean.setDescripcion(oPlatoBeanDeCarrito.getDescripcion());
+                            oTicketdepedidoBean.setImporte(importeTotal);
+                            oTicketdepedidoBean.setIva(21);
+                            
                             LineapedidoSpecificDaoImplementation oLineadepedidoDao = new LineapedidoSpecificDaoImplementation(oConnection, (MetaBeanHelper) oRequest.getSession().getAttribute("user"), null);
                             oLineadepedidoBean.setId(oLineadepedidoDao.set(oLineadepedidoBean));
                             oPlatoBeanDeCarrito.setExistencias(oPlatoBeanDeCarrito.getExistencias() - oCarritoBean.getCantidad());
 
                             TicketSpecificDaoImplementation oTicketdepedidoDao = new TicketSpecificDaoImplementation(oConnection, (MetaBeanHelper) oRequest.getSession().getAttribute("user"), null);
                             oTicketdepedidoBean.setId(oTicketdepedidoDao.set(oTicketdepedidoBean));
-
+                            
                             oPlatoDao.set(oPlatoBeanDeCarrito);
                         }
                     }

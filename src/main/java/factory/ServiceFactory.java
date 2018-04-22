@@ -441,7 +441,7 @@ public class ServiceFactory {
                     case "add":
                         oReplyBean = oCarritoService.add();
                         break;
-                    case "remove":
+                    case "removeplato":
                         oReplyBean = oCarritoService.remove();
                         break;
                     case "list":

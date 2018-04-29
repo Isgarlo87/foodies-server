@@ -234,7 +234,9 @@ public class CarritoSpecificServiceImplementation extends TableGenericServiceImp
                     oPooledConnection.disposeConnection();
                 }
             }
-            return oReplyBean = new ReplyBeanHelper(200, "Compra realizada correctamente");
+            Gson oGson = GsonHelper.getGson();
+            String strJson = oGson.toJson("Compra realizada correctamente");
+            return oReplyBean = new ReplyBeanHelper(200, strJson);
         } else {
             return new ReplyBeanHelper(401, "Unauthorized operation");
         }
